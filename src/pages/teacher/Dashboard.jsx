@@ -49,7 +49,7 @@ export default function TeacherDashboard() {
   if (loading) {
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {[1,2,3].map(i => <Skeleton key={i} className="h-24" />)}
         </div>
         <Skeleton className="h-48" />
@@ -59,9 +59,9 @@ export default function TeacherDashboard() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-xl font-extrabold">👋 Xush kelibsiz, {profile?.full_name}</h1>
+      <h1 className="text-lg sm:text-xl font-extrabold">👋 Xush kelibsiz, {profile?.full_name}</h1>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <StatCard label="Guruhlarim" value={stats.groupsCount} icon="👥" color="blue" />
         <StatCard label="O'quvchilar" value={stats.studentsCount} icon="🎓" color="green" />
         <StatCard label="Tekshirilmagan" value={stats.pendingHomeworks} icon="📝" color="orange" />

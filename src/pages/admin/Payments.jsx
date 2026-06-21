@@ -4,7 +4,7 @@ import { usePayments, useStudents } from '../../hooks/useData'
 import { usePagination } from '../../hooks/usePagination'
 import {
   Card, StatCard, Button, Input, Select, Modal, ConfirmDialog,
-  Badge, SearchInput, Pagination, TableSkeleton, EmptyState
+  Badge, SearchInput, Pagination, TableSkeleton, EmptyState, DataTable
 } from '../../components/ui'
 import { fmtMoney, fmtDate, getInitial, MONTHS_UZ } from '../../lib/utils'
 import { toast } from 'sonner'
@@ -99,8 +99,8 @@ export default function AdminPayments() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-extrabold">💰 To'lovlar</h1>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h1 className="text-lg sm:text-xl font-extrabold">💰 To'lovlar</h1>
         <Button onClick={openCreate}><Plus size={16} /> To'lov qabul qilish</Button>
       </div>
 
@@ -126,43 +126,29 @@ export default function AdminPayments() {
         ) : paged.length === 0 ? (
           <EmptyState icon="💰" text={total === 0 ? "Hali to'lov yo'q" : "Hech narsa topilmadi"} />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-surface2 text-left text-text2 text-xs uppercase">
-                  <th className="px-4 py-3 font-bold">O'quvchi</th>
-                  <th className="px-4 py-3 font-bold hidden md:table-cell">Guruh</th>
-                  <th className="px-4 py-3 font-bold">Summa</th>
-                  <th className="px-4 py-3 font-bold">Oy/Yil</th>
-                  <th className="px-4 py-3 font-bold hidden md:table-cell">Sana</th>
-                  <th className="px-4 py-3 font-bold text-right">Amallar</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paged.map(p => (
-                  <tr key={p.id} className="border-t border-border hover:bg-surface2 transition">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-400 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-                          {getInitial(p.students?.profiles?.full_name)}
-                        </div>
-                        <span className="font-medium">{p.students?.profiles?.full_name || '—'}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-text2 hidden md:table-cell">{p.students?.groups?.name || '—'}</td>
-                    <td className="px-4 py-3 mono text-emerald-500 font-semibold">{fmtMoney(p.amount)}</td>
-                    <td className="px-4 py-3">{MONTHS_UZ[p.month - 1]} {p.year}</td>
-                    <td className="px-4 py-3 text-text2 text-xs hidden md:table-cell">{fmtDate(p.payment_date)}</td>
-                    <td className="px-4 py-3 text-right">
-                      <button onClick={() => setDeleteTarget(p)} className="p-1.5 text-text2 hover:text-red-500 transition">
-                        <Trash2 size={15} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            rows={paged}
+            columns={[
+              { key: 'group', header: 'Guruh', cardHidden: true, render: p => p.students?.groups?.name || '—' },
+              { key: 'amount', header: 'Summa', render: p => <span className="mono text-emerald-500 font-semibold">{fmtMoney(p.amount)}</span> },
+              { key: 'period', header: 'Oy/Yil', render: p => `${MONTHS_UZ[p.month - 1]} ${p.year}` },
+              { key: 'date', header: 'Sana', cardHidden: true, render: p => fmtDate(p.payment_date) },
+            ]}
+            renderCardTitle={p => (
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-400 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+                  {getInitial(p.students?.profiles?.full_name)}
+                </div>
+                <span className="truncate">{p.students?.profiles?.full_name || '—'}</span>
+              </div>
+            )}
+            renderCardSubtitle={p => p.students?.groups?.name || null}
+            actions={p => (
+              <button onClick={() => setDeleteTarget(p)} className="p-1.5 text-text2 hover:text-red-500 transition">
+                <Trash2 size={15} />
+              </button>
+            )}
+          />
         )}
         <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </Card>

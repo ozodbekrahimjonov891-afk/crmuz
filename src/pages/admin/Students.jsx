@@ -4,7 +4,7 @@ import { useStudents, useGroups } from '../../hooks/useData'
 import { usePagination } from '../../hooks/usePagination'
 import {
   Card, Button, Input, Select, Modal, ConfirmDialog,
-  Badge, SearchInput, Pagination, TableSkeleton, EmptyState
+  Badge, SearchInput, Pagination, TableSkeleton, EmptyState, DataTable
 } from '../../components/ui'
 import { fmtMoney, fmtDate, getInitial, PAYMENT_LABELS } from '../../lib/utils'
 import { supabase } from '../../lib/supabase'
@@ -150,8 +150,8 @@ export default function AdminStudents() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-extrabold">👨‍🎓 O'quvchilar</h1>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h1 className="text-lg sm:text-xl font-extrabold">👨‍🎓 O'quvchilar</h1>
         <Button onClick={openCreate}><Plus size={16} /> Qo'shish</Button>
       </div>
 
@@ -177,53 +177,48 @@ export default function AdminStudents() {
         ) : paged.length === 0 ? (
           <EmptyState icon="🎓" text={total === 0 ? "Hali o'quvchi yo'q" : "Hech narsa topilmadi"} />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-surface2 text-left text-text2 text-xs uppercase">
-                  <th className="px-4 py-3 font-bold">Ism</th>
-                  <th className="px-4 py-3 font-bold hidden md:table-cell">Telefon</th>
-                  <th className="px-4 py-3 font-bold">Guruh</th>
-                  <th className="px-4 py-3 font-bold">To'lov</th>
-                  <th className="px-4 py-3 font-bold hidden md:table-cell">Qo'shilgan</th>
-                  <th className="px-4 py-3 font-bold text-right">Amallar</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paged.map(s => (
-                  <tr key={s.id} className="border-t border-border hover:bg-surface2 transition">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-                          {getInitial(s.profiles?.full_name)}
-                        </div>
-                        <span className="font-medium">{s.profiles?.full_name}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-text2 hidden md:table-cell">{s.profiles?.phone || '—'}</td>
-                    <td className="px-4 py-3">
-                      <div>{s.groups?.name || '—'}</div>
-                      {s.groups?.room && <div className="text-xs text-text2">Xona: {s.groups.room}</div>}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge color={PAYMENT_LABELS[s.payment_status]?.color}>
-                        {PAYMENT_LABELS[s.payment_status]?.icon} {PAYMENT_LABELS[s.payment_status]?.text}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-text2 text-xs hidden md:table-cell">{fmtDate(s.created_at)}</td>
-                    <td className="px-4 py-3 text-right">
-                      <button onClick={() => openEdit(s)} className="p-1.5 text-text2 hover:text-accent transition">
-                        <Pencil size={15} />
-                      </button>
-                      <button onClick={() => setDeleteTarget(s)} className="p-1.5 text-text2 hover:text-red-500 transition">
-                        <Trash2 size={15} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            rows={paged}
+            columns={[
+              { key: 'phone', header: 'Telefon', render: s => s.profiles?.phone || '—' },
+              {
+                key: 'group', header: 'Guruh',
+                render: s => (
+                  <div>
+                    <div>{s.groups?.name || '—'}</div>
+                    {s.groups?.room && <div className="text-xs text-text2">Xona: {s.groups.room}</div>}
+                  </div>
+                ),
+              },
+              {
+                key: 'payment', header: "To'lov",
+                render: s => (
+                  <Badge color={PAYMENT_LABELS[s.payment_status]?.color}>
+                    {PAYMENT_LABELS[s.payment_status]?.icon} {PAYMENT_LABELS[s.payment_status]?.text}
+                  </Badge>
+                ),
+              },
+              { key: 'created_at', header: "Qo'shilgan", cardHidden: true, render: s => fmtDate(s.created_at) },
+            ]}
+            renderCardTitle={s => (
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+                  {getInitial(s.profiles?.full_name)}
+                </div>
+                <span className="truncate">{s.profiles?.full_name}</span>
+              </div>
+            )}
+            actions={s => (
+              <div className="flex items-center gap-1 justify-end">
+                <button onClick={() => openEdit(s)} className="p-1.5 text-text2 hover:text-accent transition">
+                  <Pencil size={15} />
+                </button>
+                <button onClick={() => setDeleteTarget(s)} className="p-1.5 text-text2 hover:text-red-500 transition">
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            )}
+          />
         )}
         <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </Card>

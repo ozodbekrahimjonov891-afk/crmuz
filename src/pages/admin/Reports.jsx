@@ -113,8 +113,8 @@ export default function AdminReports() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-extrabold">📈 Hisobotlar</h1>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h1 className="text-lg sm:text-xl font-extrabold">📈 Hisobotlar</h1>
         <Button onClick={exportExcel}><Download size={16} /> Excel export</Button>
       </div>
 
