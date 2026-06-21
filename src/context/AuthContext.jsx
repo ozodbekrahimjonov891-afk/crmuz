@@ -47,37 +47,6 @@ export function AuthProvider({ children }) {
     return data
   }
 
-  async function signUp(email, password, fullName, centerName) {
-    // 1. Markaz yaratish
-    const { data: center, error: centerErr } = await supabase
-      .from('centers')
-      .insert({ name: centerName })
-      .select()
-      .single()
-    if (centerErr) throw centerErr
-
-    // 2. Auth foydalanuvchi yaratish
-    const { data: authData, error: authErr } = await supabase.auth.signUp({
-      email,
-      password,
-    })
-    if (authErr) throw authErr
-
-    // 3. Profil yaratish (admin sifatida)
-    const { error: profileErr } = await supabase.from('profiles').insert({
-      id: authData.user.id,
-      full_name: fullName,
-      role: 'admin',
-      center_id: center.id,
-    })
-    if (profileErr) throw profileErr
-
-    // 4. Markazga admin_id qo'shish
-    await supabase.from('centers').update({ admin_id: authData.user.id }).eq('id', center.id)
-
-    return authData
-  }
-
   async function signOut() {
     await supabase.auth.signOut()
     setUser(null)
@@ -92,7 +61,6 @@ export function AuthProvider({ children }) {
     center: profile?.centers,
     loading,
     signIn,
-    signUp,
     signOut,
     refreshProfile: () => user && loadProfile(user.id),
   }

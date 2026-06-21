@@ -27,10 +27,10 @@ export function StatCard({ label, value, icon, color = 'blue' }) {
     red: 'text-red-500',
   }
   return (
-    <Card className="p-3 sm:p-5 relative overflow-hidden">
-      <div className="text-[10px] sm:text-xs font-semibold text-text2 uppercase tracking-wide mb-1 sm:mb-2 truncate">{label}</div>
-      <div className={cn('text-xl sm:text-3xl font-extrabold mono', colors[color])}>{value}</div>
-      {icon && <div className="absolute top-3 right-3 sm:top-4 sm:right-4 text-base sm:text-xl opacity-50">{icon}</div>}
+    <Card className="p-5 relative overflow-hidden">
+      <div className="text-xs font-semibold text-text2 uppercase tracking-wide mb-2">{label}</div>
+      <div className={cn('text-3xl font-extrabold mono', colors[color])}>{value}</div>
+      {icon && <div className="absolute top-4 right-4 text-xl opacity-50">{icon}</div>}
     </Card>
   )
 }
@@ -180,79 +180,6 @@ export function SearchInput({ value, onChange, placeholder = "Qidirish..." }) {
         className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-surface2 text-text text-sm outline-none focus:border-accent transition"
       />
     </div>
-  )
-}
-
-/**
- * DataTable — kompyuterda jadval, telefonda kartochka ko'rinishida ko'rsatadi.
- *
- * columns: [{ key, header, render(row), className, cardHidden }]
- * rows: ma'lumotlar massivi
- * renderCardTitle(row): kartochka sarlavhasi (mobil uchun, majburiy)
- * renderCardSubtitle(row): kartochka kichik sarlavhasi (ixtiyoriy)
- * actions(row): amallar tugmalari — ikkala ko'rinishda ham bitta joyda chiqadi
- * keyField: qator uchun unique key olinadigan maydon nomi (default: 'id')
- */
-export function DataTable({ columns, rows, renderCardTitle, renderCardSubtitle, actions, keyField = 'id' }) {
-  return (
-    <>
-      {/* Desktop: oddiy jadval */}
-      <div className="overflow-x-auto hidden md:block">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-surface2 text-left text-text2 text-xs uppercase">
-              {columns.map(col => (
-                <th key={col.key} className={cn('px-4 py-3 font-bold', col.className)}>
-                  {col.header}
-                </th>
-              ))}
-              {actions && <th className="px-4 py-3 font-bold text-right">Amallar</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map(row => (
-              <tr key={row[keyField]} className="border-t border-border hover:bg-surface2 transition">
-                {columns.map(col => (
-                  <td key={col.key} className={cn('px-4 py-3', col.className)}>
-                    {col.render ? col.render(row) : row[col.key]}
-                  </td>
-                ))}
-                {actions && <td className="px-4 py-3 text-right">{actions(row)}</td>}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Mobil: kartochka ro'yxati */}
-      <div className="md:hidden divide-y divide-border">
-        {rows.map(row => (
-          <div key={row[keyField]} className="p-4">
-            <div className="flex items-start justify-between gap-3 mb-2.5">
-              <div className="min-w-0 flex-1">
-                <div className="font-bold text-sm truncate">{renderCardTitle(row)}</div>
-                {renderCardSubtitle && (
-                  <div className="text-xs text-text2 mt-0.5">{renderCardSubtitle(row)}</div>
-                )}
-              </div>
-              {actions && <div className="flex-shrink-0">{actions(row)}</div>}
-            </div>
-            <div className="space-y-1.5">
-              {columns.filter(col => !col.cardHidden).map(col => {
-                const val = col.render ? col.render(row) : row[col.key]
-                if (val === null || val === undefined || val === '') return null
-                return (
-                  <div key={col.key} className="flex items-center justify-between text-xs gap-3">
-                    <span className="text-text2 flex-shrink-0">{col.header}</span>
-                    <span className="text-right min-w-0">{val}</span>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
-    </>
   )
 }
 

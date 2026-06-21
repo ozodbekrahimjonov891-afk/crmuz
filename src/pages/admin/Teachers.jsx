@@ -4,18 +4,23 @@ import { useTeachers } from '../../hooks/useData'
 import { usePagination } from '../../hooks/usePagination'
 import {
   Card, Button, Input, Modal, ConfirmDialog,
-  SearchInput, Pagination, TableSkeleton, EmptyState, DataTable
+  SearchInput, Pagination, TableSkeleton, EmptyState
 } from '../../components/ui'
 import { fmtMoney, getInitial } from '../../lib/utils'
 import { supabase } from '../../lib/supabase'
+import { createUserWithLogin, resetUserPassword, deleteUserCompletely } from '../../lib/adminApi'
 import { toast } from 'sonner'
-import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, KeyRound } from 'lucide-react'
 
-const emptyForm = { fullName: '', phone: '', subject: '', salary: 0 }
+const emptyForm = { fullName: '', phone: '', email: '', password: '', subject: '', salary: 0 }
+
+function randomPassword() {
+  return Math.random().toString(36).slice(-8)
+}
 
 export default function AdminTeachers() {
   const { centerId } = useAuth()
-  const { teachers, loading, createTeacher, updateTeacher, deleteTeacher } = useTeachers(centerId)
+  const { teachers, loading, fetchTeachers, updateTeacher } = useTeachers(centerId)
 
   const withSearch = teachers.map(t => ({ ...t, _searchName: t.profiles?.full_name || '' }))
   const { page, setPage, search, setSearch, totalPages, paged, total } = usePagination(
@@ -29,12 +34,15 @@ export default function AdminTeachers() {
   const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleting, setDeleting] = useState(false)
+  const [resetTarget, setResetTarget] = useState(null)
+  const [newPass, setNewPass] = useState('')
+  const [resetting, setResetting] = useState(false)
 
   function update(field, val) { setForm(prev => ({ ...prev, [field]: val })) }
 
   function openCreate() {
     setEditing(null)
-    setForm(emptyForm)
+    setForm({ ...emptyForm, password: randomPassword() })
     setErrors({})
     setModalOpen(true)
   }
@@ -44,6 +52,7 @@ export default function AdminTeachers() {
     setForm({
       fullName: teacher.profiles?.full_name || '',
       phone: teacher.profiles?.phone || '',
+      email: '', password: '',
       subject: teacher.subject || '',
       salary: teacher.salary || 0,
     })
@@ -55,6 +64,10 @@ export default function AdminTeachers() {
     const errs = {}
     if (!form.fullName.trim()) errs.fullName = "Ism kiritilishi shart"
     if (!form.subject.trim()) errs.subject = "Fan kiritilishi shart"
+    if (!editing) {
+      if (!form.email.trim()) errs.email = "Email kiritilishi shart"
+      if (!form.password || form.password.length < 6) errs.password = "Parol kamida 6 belgi"
+    }
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -70,26 +83,16 @@ export default function AdminTeachers() {
         await updateTeacher(editing.id, { subject: form.subject, salary: form.salary })
         toast.success("O'qituvchi yangilandi!")
       } else {
-        const { data: newProfile, error: profileErr } = await supabase
-          .from('profiles')
-          .insert({
-            id: crypto.randomUUID(),
-            full_name: form.fullName,
-            phone: form.phone,
-            role: 'teacher',
-            center_id: centerId,
-          })
-          .select()
-          .single()
-        if (profileErr) throw profileErr
-
-        await createTeacher({
-          profile_id: newProfile.id,
-          center_id: centerId,
-          subject: form.subject,
-          salary: form.salary,
+        await createUserWithLogin({
+          email: form.email,
+          password: form.password,
+          fullName: form.fullName,
+          phone: form.phone,
+          role: 'teacher',
+          extra: { subject: form.subject, salary: form.salary },
         })
-        toast.success("O'qituvchi qo'shildi!")
+        toast.success(`O'qituvchi qo'shildi! Login: ${form.email} / Parol: ${form.password}`)
+        await fetchTeachers()
       }
       setModalOpen(false)
     } catch (err) {
@@ -102,9 +105,10 @@ export default function AdminTeachers() {
   async function handleDelete() {
     setDeleting(true)
     try {
-      await deleteTeacher(deleteTarget.id)
-      toast.success("O'qituvchi o'chirildi")
+      await deleteUserCompletely(deleteTarget.profile_id)
+      toast.success("O'qituvchi butunlay o'chirildi")
       setDeleteTarget(null)
+      await fetchTeachers()
     } catch (err) {
       toast.error('Xatolik: ' + err.message)
     } finally {
@@ -112,10 +116,28 @@ export default function AdminTeachers() {
     }
   }
 
+  async function handleResetPassword() {
+    if (!newPass || newPass.length < 6) {
+      toast.error("Parol kamida 6 belgidan iborat bo'lishi kerak")
+      return
+    }
+    setResetting(true)
+    try {
+      await resetUserPassword(resetTarget.profile_id, newPass)
+      toast.success(`Yangi parol o'rnatildi: ${newPass}`)
+      setResetTarget(null)
+      setNewPass('')
+    } catch (err) {
+      toast.error('Xatolik: ' + err.message)
+    } finally {
+      setResetting(false)
+    }
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-lg sm:text-xl font-extrabold">👨‍🏫 O'qituvchilar</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-extrabold">👨‍🏫 O'qituvchilar</h1>
         <Button onClick={openCreate}><Plus size={16} /> Qo'shish</Button>
       </div>
 
@@ -129,39 +151,66 @@ export default function AdminTeachers() {
         ) : paged.length === 0 ? (
           <EmptyState icon="👨‍🏫" text={total === 0 ? "Hali o'qituvchi yo'q" : "Hech narsa topilmadi"} />
         ) : (
-          <DataTable
-            rows={paged}
-            columns={[
-              { key: 'subject', header: 'Fan' },
-              { key: 'phone', header: 'Telefon', cardHidden: true, render: t => t.profiles?.phone || '—' },
-              { key: 'salary', header: 'Maosh', render: t => <span className="mono text-emerald-500 font-semibold">{fmtMoney(t.salary)}</span> },
-            ]}
-            renderCardTitle={t => (
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-400 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-                  {getInitial(t.profiles?.full_name)}
-                </div>
-                <span className="truncate">{t.profiles?.full_name}</span>
-              </div>
-            )}
-            renderCardSubtitle={t => t.profiles?.phone || null}
-            actions={t => (
-              <div className="flex items-center gap-1 justify-end">
-                <button onClick={() => openEdit(t)} className="p-1.5 text-text2 hover:text-accent transition">
-                  <Pencil size={15} />
-                </button>
-                <button onClick={() => setDeleteTarget(t)} className="p-1.5 text-text2 hover:text-red-500 transition">
-                  <Trash2 size={15} />
-                </button>
-              </div>
-            )}
-          />
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-surface2 text-left text-text2 text-xs uppercase">
+                  <th className="px-4 py-3 font-bold">Ism</th>
+                  <th className="px-4 py-3 font-bold">Fan</th>
+                  <th className="px-4 py-3 font-bold hidden md:table-cell">Telefon</th>
+                  <th className="px-4 py-3 font-bold">Maosh</th>
+                  <th className="px-4 py-3 font-bold text-right">Amallar</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paged.map(t => (
+                  <tr key={t.id} className="border-t border-border hover:bg-surface2 transition">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-400 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+                          {getInitial(t.profiles?.full_name)}
+                        </div>
+                        <span className="font-medium">{t.profiles?.full_name}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">{t.subject}</td>
+                    <td className="px-4 py-3 text-text2 hidden md:table-cell">{t.profiles?.phone || '—'}</td>
+                    <td className="px-4 py-3 mono text-emerald-500 font-semibold">{fmtMoney(t.salary)}</td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <button onClick={() => setResetTarget(t)} title="Parolni tiklash" className="p-1.5 text-text2 hover:text-amber-500 transition">
+                        <KeyRound size={15} />
+                      </button>
+                      <button onClick={() => openEdit(t)} className="p-1.5 text-text2 hover:text-accent transition">
+                        <Pencil size={15} />
+                      </button>
+                      <button onClick={() => setDeleteTarget(t)} className="p-1.5 text-text2 hover:text-red-500 transition">
+                        <Trash2 size={15} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
         <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </Card>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? "O'qituvchini tahrirlash" : "Yangi o'qituvchi"}>
         <Input label="To'liq ism" value={form.fullName} onChange={e => update('fullName', e.target.value)} error={errors.fullName} placeholder="Jamshid Abdullayev" />
+
+        {!editing && (
+          <>
+            <Input label="Email (login uchun)" value={form.email} onChange={e => update('email', e.target.value)} error={errors.email} placeholder="jamshid@gmail.com" />
+            <div className="flex gap-2 items-end mb-3.5">
+              <div className="flex-1">
+                <Input label="Parol" value={form.password} onChange={e => update('password', e.target.value)} error={errors.password} className="mb-0" />
+              </div>
+              <Button variant="ghost" type="button" onClick={() => update('password', randomPassword())} className="mb-0">🎲 Generatsiya</Button>
+            </div>
+          </>
+        )}
+
         <Input label="Fan" value={form.subject} onChange={e => update('subject', e.target.value)} error={errors.subject} placeholder="Kimyo" />
         <Input label="Telefon" value={form.phone} onChange={e => update('phone', e.target.value)} placeholder="+998901234567" />
         <Input label="Oylik maosh (so'm)" type="number" value={form.salary} onChange={e => update('salary', Number(e.target.value))} placeholder="4000000" />
@@ -178,8 +227,24 @@ export default function AdminTeachers() {
         onConfirm={handleDelete}
         loading={deleting}
         title="O'qituvchini o'chirish"
-        message={`"${deleteTarget?.profiles?.full_name}" ni o'chirishni tasdiqlaysizmi?`}
+        message={`"${deleteTarget?.profiles?.full_name}" ni butunlay o'chirishni tasdiqlaysizmi? Bu amalni qaytarib bo'lmaydi.`}
       />
+
+      <Modal open={!!resetTarget} onClose={() => setResetTarget(null)} title="Parolni tiklash">
+        <p className="text-sm text-text2 mb-3">
+          <strong>{resetTarget?.profiles?.full_name}</strong> uchun yangi parol o'rnating:
+        </p>
+        <div className="flex gap-2 items-end mb-3.5">
+          <div className="flex-1">
+            <Input value={newPass} onChange={e => setNewPass(e.target.value)} placeholder="Yangi parol" className="mb-0" />
+          </div>
+          <Button variant="ghost" type="button" onClick={() => setNewPass(randomPassword())} className="mb-0">🎲</Button>
+        </div>
+        <div className="flex gap-3">
+          <Button variant="ghost" onClick={() => setResetTarget(null)} className="flex-1">Bekor</Button>
+          <Button onClick={handleResetPassword} loading={resetting} className="flex-1">O'rnatish</Button>
+        </div>
+      </Modal>
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { toast } from 'sonner'
 import { GraduationCap, Loader2 } from 'lucide-react'
@@ -83,11 +83,8 @@ export default function Login() {
           </button>
         </form>
 
-        <p className="text-center text-sm text-text2 mt-5">
-          Markazingiz yo'qmi?{' '}
-          <Link to="/register" className="text-accent font-semibold hover:underline">
-            Ro'yxatdan o'tish
-          </Link>
+        <p className="text-center text-xs text-text2 mt-5">
+          Login ma'lumotlaringiz yo'qmi? Administratoringizga murojaat qiling.
         </p>
       </div>
     </div>

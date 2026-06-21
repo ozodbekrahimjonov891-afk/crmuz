@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useGroups, useAttendance, useStudents } from '../../hooks/useData'
-import { Card, CardHeader, Select, Badge, EmptyState, Button, DataTable } from '../../components/ui'
+import { Card, CardHeader, Select, Badge, EmptyState, Button } from '../../components/ui'
 import { ATTENDANCE_LABELS, getInitial, calculateAttendancePercent } from '../../lib/utils'
 import { toast } from 'sonner'
 
@@ -53,19 +53,19 @@ export default function AdminAttendance() {
       const late = records.filter(r => r.status === 'late').length
       const excused = records.filter(r => r.status === 'excused').length
       const percent = calculateAttendancePercent(records)
-      return { _key: student?.id || student?.profiles?.full_name, student, total, absent, present, late, excused, percent }
+      return { student, total, absent, present, late, excused, percent }
     }).sort((a, b) => a.percent - b.percent)
   }, [records, view])
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <h1 className="text-lg sm:text-xl font-extrabold">✅ Davomat</h1>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h1 className="text-xl font-extrabold">✅ Davomat</h1>
         <div className="flex gap-2">
-          <Button variant={view === 'daily' ? 'primary' : 'ghost'} onClick={() => setView('daily')} className="flex-1 sm:flex-none">
-            📅 Kunlik
+          <Button variant={view === 'daily' ? 'primary' : 'ghost'} onClick={() => setView('daily')}>
+            📅 Kunlik belgilash
           </Button>
-          <Button variant={view === 'stats' ? 'primary' : 'ghost'} onClick={() => setView('stats')} className="flex-1 sm:flex-none">
+          <Button variant={view === 'stats' ? 'primary' : 'ghost'} onClick={() => setView('stats')}>
             📊 Statistika
           </Button>
         </div>
@@ -103,16 +103,14 @@ export default function AdminAttendance() {
               {groupStudents.map(s => {
                 const rec = recordFor(s.id)
                 return (
-                  <div key={s.id} className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3 px-4 sm:px-5 py-3 border-b border-border last:border-0">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-                        {getInitial(s.profiles?.full_name)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-semibold truncate">{s.profiles?.full_name}</div>
-                      </div>
+                  <div key={s.id} className="flex items-center gap-3 px-5 py-3 border-b border-border last:border-0">
+                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+                      {getInitial(s.profiles?.full_name)}
                     </div>
-                    <div className="flex gap-1.5 flex-wrap sm:justify-end">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold truncate">{s.profiles?.full_name}</div>
+                    </div>
+                    <div className="flex gap-1.5 flex-wrap justify-end">
                       {Object.entries(ATTENDANCE_LABELS).map(([key, label]) => (
                         <button
                           key={key}
@@ -147,22 +145,38 @@ export default function AdminAttendance() {
           {studentStats.length === 0 ? (
             <EmptyState icon="📊" text="Hali davomat ma'lumoti yo'q" />
           ) : (
-            <DataTable
-              rows={studentStats}
-              keyField="_key"
-              columns={[
-                { key: 'total', header: 'Jami', className: 'text-center', render: r => <span className="mono">{r.total}</span> },
-                { key: 'present', header: '✅ Keldi', className: 'text-center', render: r => <span className="mono text-emerald-500">{r.present}</span> },
-                { key: 'absent', header: '❌ Qoldirdi', className: 'text-center', render: r => <span className="mono text-red-500 font-bold">{r.absent}</span> },
-                { key: 'late', header: '⏰ Kech', className: 'text-center', cardHidden: true, render: r => <span className="mono text-amber-500">{r.late}</span> },
-                { key: 'excused', header: '📋 Uzrli', className: 'text-center', cardHidden: true, render: r => <span className="mono text-blue-500">{r.excused}</span> },
-                {
-                  key: 'percent', header: 'Davomat %', className: 'text-center',
-                  render: r => <Badge color={r.percent >= 80 ? 'green' : r.percent >= 50 ? 'orange' : 'red'}>{r.percent}%</Badge>,
-                },
-              ]}
-              renderCardTitle={r => r.student?.profiles?.full_name}
-            />
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-surface2 text-left text-text2 text-xs uppercase">
+                    <th className="px-4 py-3 font-bold">O'quvchi</th>
+                    <th className="px-4 py-3 font-bold text-center">Jami dars</th>
+                    <th className="px-4 py-3 font-bold text-center">✅ Keldi</th>
+                    <th className="px-4 py-3 font-bold text-center">❌ Qoldirdi</th>
+                    <th className="px-4 py-3 font-bold text-center">⏰ Kech</th>
+                    <th className="px-4 py-3 font-bold text-center">📋 Uzrli</th>
+                    <th className="px-4 py-3 font-bold text-center">Davomat %</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {studentStats.map(({ student, total, present, absent, late, excused, percent }) => (
+                    <tr key={student?.profiles?.full_name} className="border-t border-border hover:bg-surface2 transition">
+                      <td className="px-4 py-3 font-medium">{student?.profiles?.full_name}</td>
+                      <td className="px-4 py-3 text-center mono">{total}</td>
+                      <td className="px-4 py-3 text-center mono text-emerald-500">{present}</td>
+                      <td className="px-4 py-3 text-center mono text-red-500 font-bold">{absent}</td>
+                      <td className="px-4 py-3 text-center mono text-amber-500">{late}</td>
+                      <td className="px-4 py-3 text-center mono text-blue-500">{excused}</td>
+                      <td className="px-4 py-3 text-center">
+                        <Badge color={percent >= 80 ? 'green' : percent >= 50 ? 'orange' : 'red'}>
+                          {percent}%
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </Card>
       )}

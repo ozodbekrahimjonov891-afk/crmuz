@@ -41,7 +41,7 @@ export default function ParentDashboard() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-lg sm:text-xl font-extrabold">👋 Xush kelibsiz, {profile?.full_name}</h1>
+      <h1 className="text-xl font-extrabold">👋 Xush kelibsiz, {profile?.full_name}</h1>
 
       {children.length === 0 ? (
         <Card><EmptyState icon="👶" text="Farzandingiz tizimga ulanmagan" /></Card>
@@ -50,7 +50,7 @@ export default function ParentDashboard() {
           <Card key={child.id}>
             <CardHeader title={`👶 ${child.profiles?.full_name}`} />
             <div className="p-5">
-              <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4">
+              <div className="grid grid-cols-3 gap-3 mb-4">
                 <StatCard label="Davomat" value={`${child.attendancePercent}%`} color={child.attendancePercent >= 80 ? 'green' : 'orange'} />
                 <StatCard
                   label="To'lov"

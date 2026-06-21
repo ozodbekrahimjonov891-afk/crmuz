@@ -18,6 +18,7 @@ export function useStudents(centerId) {
         parent:profiles!students_parent_id_fkey(full_name, phone)
       `)
       .eq('center_id', centerId)
+      .eq('is_active', true)
       .order('created_at', { ascending: false })
     if (error) {
       toast.error('Xatolik: ' + error.message)
@@ -102,6 +103,7 @@ export function useGroups(centerId) {
       .from('groups')
       .select('*, teachers(profiles(full_name)), students(count)')
       .eq('center_id', centerId)
+      .eq('is_active', true)
       .order('created_at', { ascending: false })
     if (error) toast.error('Xatolik: ' + error.message)
     else setGroups(data || [])

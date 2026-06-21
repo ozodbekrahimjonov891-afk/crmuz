@@ -46,7 +46,7 @@ export default function StudentDashboard() {
   if (loading) {
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        <div className="grid grid-cols-3 gap-3">
           {[1,2,3].map(i => <Skeleton key={i} className="h-24" />)}
         </div>
       </div>
@@ -55,9 +55,9 @@ export default function StudentDashboard() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-lg sm:text-xl font-extrabold">👋 Salom, {profile?.full_name}</h1>
+      <h1 className="text-xl font-extrabold">👋 Salom, {profile?.full_name}</h1>
 
-      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <StatCard label="Davomat" value={`${attendancePercent}%`} icon="✅" color={attendancePercent >= 80 ? 'green' : 'orange'} />
         <StatCard label="To'lov" value={PAYMENT_LABELS[studentInfo?.payment_status]?.icon || '—'} icon="💰" color={PAYMENT_LABELS[studentInfo?.payment_status]?.color} />
         <StatCard label="Vazifalar" value={nextHomeworks.length} icon="📝" color="purple" />

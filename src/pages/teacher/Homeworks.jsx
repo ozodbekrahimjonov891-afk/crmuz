@@ -95,8 +95,8 @@ export default function TeacherHomeworks() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-lg sm:text-xl font-extrabold">📚 Vazifalar</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-extrabold">📚 Vazifalar</h1>
         <Button onClick={() => setModalOpen(true)}><Plus size={16} /> Vazifa berish</Button>
       </div>
 

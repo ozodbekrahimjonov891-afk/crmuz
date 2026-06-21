@@ -3,7 +3,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { ROLE_LABELS, getInitial } from '../../lib/utils'
 import {
-  LayoutDashboard, Users, UserCog, Layers, Wallet, CalendarCheck,
+  LayoutDashboard, Users, UserCog, Layers, Wallet, CalendarCheck, Calendar,
   BookOpen, BarChart3, Bell, Settings, LogOut, Moon, Sun, Menu, X
 } from 'lucide-react'
 import { useEffect } from 'react'
@@ -14,6 +14,7 @@ const NAV_ITEMS = {
     { to: '/admin/students', icon: Users, label: "O'quvchilar" },
     { to: '/admin/teachers', icon: UserCog, label: "O'qituvchilar" },
     { to: '/admin/groups', icon: Layers, label: 'Guruhlar' },
+    { to: '/admin/schedule', icon: Calendar, label: 'Dars jadvali' },
     { to: '/admin/payments', icon: Wallet, label: "To'lovlar" },
     { to: '/admin/attendance', icon: CalendarCheck, label: 'Davomat' },
     { to: '/admin/reports', icon: BarChart3, label: 'Hisobotlar' },
@@ -23,6 +24,7 @@ const NAV_ITEMS = {
   teacher: [
     { to: '/teacher/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/teacher/groups', icon: Layers, label: "Guruhlarim" },
+    { to: '/teacher/schedule', icon: Calendar, label: 'Dars jadvali' },
     { to: '/teacher/attendance', icon: CalendarCheck, label: 'Davomat' },
     { to: '/teacher/homeworks', icon: BookOpen, label: 'Vazifalar' },
   ],

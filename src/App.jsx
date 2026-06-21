@@ -6,12 +6,12 @@ import DashboardLayout from './components/layout/DashboardLayout'
 import RoleRedirect from './pages/RoleRedirect'
 
 import Login from './pages/auth/Login'
-import Register from './pages/auth/Register'
 
 import AdminDashboard from './pages/admin/Dashboard'
 import AdminStudents from './pages/admin/Students'
 import AdminTeachers from './pages/admin/Teachers'
 import AdminGroups from './pages/admin/Groups'
+import AdminSchedule from './pages/admin/Schedule'
 import AdminPayments from './pages/admin/Payments'
 import AdminAttendance from './pages/admin/Attendance'
 import AdminReports from './pages/admin/Reports'
@@ -20,6 +20,7 @@ import AdminSettings from './pages/admin/Settings'
 
 import TeacherDashboard from './pages/teacher/Dashboard'
 import TeacherGroups from './pages/teacher/Groups'
+import TeacherSchedule from './pages/teacher/Schedule'
 import TeacherAttendance from './pages/teacher/Attendance'
 import TeacherHomeworks from './pages/teacher/Homeworks'
 
@@ -41,7 +42,6 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
           <Route path="/redirect" element={<RoleRedirect />} />
 
           {/* ADMIN */}
@@ -50,6 +50,7 @@ export default function App() {
             <Route path="/admin/students" element={<AdminStudents />} />
             <Route path="/admin/teachers" element={<AdminTeachers />} />
             <Route path="/admin/groups" element={<AdminGroups />} />
+            <Route path="/admin/schedule" element={<AdminSchedule />} />
             <Route path="/admin/payments" element={<AdminPayments />} />
             <Route path="/admin/attendance" element={<AdminAttendance />} />
             <Route path="/admin/reports" element={<AdminReports />} />
@@ -61,6 +62,7 @@ export default function App() {
           <Route element={<ProtectedRoute allowedRoles={['teacher']}><DashboardLayout /></ProtectedRoute>}>
             <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
             <Route path="/teacher/groups" element={<TeacherGroups />} />
+            <Route path="/teacher/schedule" element={<TeacherSchedule />} />
             <Route path="/teacher/attendance" element={<TeacherAttendance />} />
             <Route path="/teacher/homeworks" element={<TeacherHomeworks />} />
           </Route>
