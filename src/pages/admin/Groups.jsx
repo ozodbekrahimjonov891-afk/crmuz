@@ -4,7 +4,7 @@ import { useGroups, useTeachers } from '../../hooks/useData'
 import { usePagination } from '../../hooks/usePagination'
 import {
   Card, Button, Input, Select, Modal, ConfirmDialog,
-  SearchInput, Pagination, TableSkeleton, EmptyState
+  SearchInput, Pagination, TableSkeleton, EmptyState, ResponsiveTable
 } from '../../components/ui'
 import { fmtMoney } from '../../lib/utils'
 import { toast } from 'sonner'
@@ -14,6 +14,8 @@ const emptyForm = {
   name: '', subject: '', teacherId: '', dayType: 'odd',
   startTime: '09:00', endTime: '10:30', room: '', monthlyFee: 0, maxStudents: 20,
 }
+
+const dayTypeLabel = { odd: 'Toq kunlar', even: 'Juft kunlar', daily: 'Har kuni' }
 
 export default function AdminGroups() {
   const { centerId } = useAuth()
@@ -45,8 +47,8 @@ export default function AdminGroups() {
     setEditing(group)
     setForm({
       name: group.name, subject: group.subject, teacherId: group.teacher_id || '',
-      dayType: group.day_type || 'odd', startTime: group.start_time?.slice(0,5) || '09:00',
-      endTime: group.end_time?.slice(0,5) || '10:30', room: group.room || '',
+      dayType: group.day_type || 'odd', startTime: group.start_time?.slice(0, 5) || '09:00',
+      endTime: group.end_time?.slice(0, 5) || '10:30', room: group.room || '',
       monthlyFee: group.monthly_fee || 0, maxStudents: group.max_students || 20,
     })
     setErrors({})
@@ -104,7 +106,66 @@ export default function AdminGroups() {
     }
   }
 
-  const dayTypeLabel = { odd: 'Toq kunlar', even: 'Juft kunlar', daily: 'Har kuni' }
+  // Jadval ustunlari tavsifi — bitta joyda, ham desktop, ham mobile shu yerdan foydalanadi
+  const columns = [
+    { key: 'name', label: 'Guruh' },
+    { key: 'teacher', label: "O'qituvchi" },
+    { key: 'room', label: 'Xona' },
+    { key: 'time', label: 'Vaqt' },
+    { key: 'students', label: "O'quvchilar" },
+    { key: 'fee', label: 'Narx' },
+  ]
+
+  function renderCell(g, col) {
+    switch (col.key) {
+      case 'name':
+        return (
+          <div>
+            <div className="font-semibold">{g.name}</div>
+            <div className="text-xs text-text2">{g.subject}</div>
+          </div>
+        )
+      case 'teacher':
+        return g.teachers?.profiles?.full_name || '—'
+      case 'room':
+        return (
+          <span className="inline-flex items-center gap-1 text-xs font-semibold bg-surface2 px-2 py-1 rounded-lg">
+            <MapPin size={12} /> {g.room || '—'}
+          </span>
+        )
+      case 'time':
+        return (
+          <div>
+            <div className="text-xs mono">{g.start_time?.slice(0, 5)}–{g.end_time?.slice(0, 5)}</div>
+            <div className="text-xs text-text2">{dayTypeLabel[g.day_type]}</div>
+          </div>
+        )
+      case 'students':
+        return (
+          <span>
+            <span className="text-accent font-semibold">{g.students?.[0]?.count || 0}</span>
+            <span className="text-text2"> / {g.max_students}</span>
+          </span>
+        )
+      case 'fee':
+        return <span className="mono">{fmtMoney(g.monthly_fee)}</span>
+      default:
+        return null
+    }
+  }
+
+  function renderActions(g) {
+    return (
+      <>
+        <button onClick={() => openEdit(g)} className="p-1.5 text-text2 hover:text-accent transition">
+          <Pencil size={15} />
+        </button>
+        <button onClick={() => setDeleteTarget(g)} className="p-1.5 text-text2 hover:text-red-500 transition">
+          <Trash2 size={15} />
+        </button>
+      </>
+    )
+  }
 
   return (
     <div className="space-y-4">
@@ -120,57 +181,16 @@ export default function AdminGroups() {
       <Card>
         {loading ? (
           <TableSkeleton rows={6} cols={6} />
-        ) : paged.length === 0 ? (
-          <EmptyState icon="👥" text={total === 0 ? "Hali guruh yo'q" : "Hech narsa topilmadi"} />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-surface2 text-left text-text2 text-xs uppercase">
-                  <th className="px-4 py-3 font-bold">Guruh</th>
-                  <th className="px-4 py-3 font-bold">O'qituvchi</th>
-                  <th className="px-4 py-3 font-bold">Xona</th>
-                  <th className="px-4 py-3 font-bold hidden md:table-cell">Vaqt</th>
-                  <th className="px-4 py-3 font-bold">O'quvchilar</th>
-                  <th className="px-4 py-3 font-bold hidden md:table-cell">Narx</th>
-                  <th className="px-4 py-3 font-bold text-right">Amallar</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paged.map(g => (
-                  <tr key={g.id} className="border-t border-border hover:bg-surface2 transition">
-                    <td className="px-4 py-3">
-                      <div className="font-semibold">{g.name}</div>
-                      <div className="text-xs text-text2">{g.subject}</div>
-                    </td>
-                    <td className="px-4 py-3">{g.teachers?.profiles?.full_name || '—'}</td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold bg-surface2 px-2 py-1 rounded-lg">
-                        <MapPin size={12} /> {g.room || '—'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 hidden md:table-cell">
-                      <div className="text-xs mono">{g.start_time?.slice(0,5)}–{g.end_time?.slice(0,5)}</div>
-                      <div className="text-xs text-text2">{dayTypeLabel[g.day_type]}</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-accent font-semibold">{g.students?.[0]?.count || 0}</span>
-                      <span className="text-text2"> / {g.max_students}</span>
-                    </td>
-                    <td className="px-4 py-3 mono hidden md:table-cell">{fmtMoney(g.monthly_fee)}</td>
-                    <td className="px-4 py-3 text-right">
-                      <button onClick={() => openEdit(g)} className="p-1.5 text-text2 hover:text-accent transition">
-                        <Pencil size={15} />
-                      </button>
-                      <button onClick={() => setDeleteTarget(g)} className="p-1.5 text-text2 hover:text-red-500 transition">
-                        <Trash2 size={15} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            columns={columns}
+            data={paged}
+            keyField="id"
+            renderCell={renderCell}
+            actions={renderActions}
+            emptyIcon="👥"
+            emptyText={total === 0 ? "Hali guruh yo'q" : "Hech narsa topilmadi"}
+          />
         )}
         <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </Card>

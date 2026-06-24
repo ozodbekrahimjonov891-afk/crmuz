@@ -205,3 +205,83 @@ export function Pagination({ page, totalPages, onChange }) {
     </div>
   )
 }
+
+
+export function ResponsiveTable({
+  columns,
+  data,
+  keyField = 'id',
+  renderCell,
+  renderCardTitle,
+  actions,
+  emptyIcon = '📭',
+  emptyText = 'Maʼlumot topilmadi',
+}) {
+  if (!data || data.length === 0) {
+    return <EmptyState icon={emptyIcon} text={emptyText} />
+  }
+
+  return (
+    <>
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-surface2 text-left text-text2 text-xs uppercase">
+              {columns.map(col => (
+                <th key={col.key} className="px-4 py-3 font-bold whitespace-nowrap">
+                  {col.label}
+                </th>
+              ))}
+              {actions && <th className="px-4 py-3 font-bold text-right">Amallar</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {data.map(row => (
+              <tr key={row[keyField]} className="border-t border-border hover:bg-surface2 transition">
+                {columns.map(col => (
+                  <td key={col.key} className="px-4 py-3 align-top">
+                    {renderCell(row, col)}
+                  </td>
+                ))}
+                {actions && (
+                  <td className="px-4 py-3 text-right whitespace-nowrap">
+                    {actions(row)}
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="md:hidden divide-y divide-border">
+        {data.map(row => (
+          <div key={row[keyField]} className="p-4 space-y-2">
+            <div className="flex items-start justify-between gap-2">
+              <div className="font-semibold text-sm flex-1">
+                {renderCardTitle ? renderCardTitle(row) : renderCell(row, columns[0])}
+              </div>
+              {actions && (
+                <div className="flex items-center gap-1 -mt-1 -mr-1 shrink-0">
+                  {actions(row)}
+                </div>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {columns.slice(renderCardTitle ? 0 : 1).map(col => (
+                <div key={col.key} className="min-w-0">
+                  <div className="text-[10px] font-semibold text-text2 uppercase tracking-wide mb-0.5">
+                    {col.label}
+                  </div>
+                  <div className="text-xs">
+                    {renderCell(row, col)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  )
+}
