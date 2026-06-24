@@ -214,7 +214,7 @@ export default function AdminStudents() {
   }
 
   function renderActions(s) {
-  const botLink = https://t.me/yuksalishcrmuzbot?start=${s.id}
+  const botLink = https://t.me/yuksalishcrmuzbot?start=${s.id}`
   return (
     <>
       <button
