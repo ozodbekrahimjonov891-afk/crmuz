@@ -214,20 +214,31 @@ export default function AdminStudents() {
   }
 
   function renderActions(s) {
-    return (
-      <>
-        <button onClick={() => setResetTarget(s)} title="Parolni tiklash" className="p-1.5 text-text2 hover:text-amber-500 transition">
-          <KeyRound size={15} />
-        </button>
-        <button onClick={() => openEdit(s)} className="p-1.5 text-text2 hover:text-accent transition">
-          <Pencil size={15} />
-        </button>
-        <button onClick={() => setDeleteTarget(s)} className="p-1.5 text-text2 hover:text-red-500 transition">
-          <Trash2 size={15} />
-        </button>
-      </>
-    )
-  }
+  const botLink = https://t.me/yuksalishcrmuzbot?start=${s.id}
+  return (
+    <>
+      <button
+        onClick={() => {
+          navigator.clipboard.writeText(botLink)
+          toast.success('Havola nusxalandi!')
+        }}
+        title="Ota-ona havolasi"
+        className="p-1.5 text-text2 hover:text-green-500 transition"
+      >
+        🔗
+      </button>
+      <button onClick={() => setResetTarget(s)} title="Parolni tiklash" className="p-1.5 text-text2 hover:text-amber-500 transition">
+        <KeyRound size={15} />
+      </button>
+      <button onClick={() => openEdit(s)} className="p-1.5 text-text2 hover:text-accent transition">
+        <Pencil size={15} />
+      </button>
+      <button onClick={() => setDeleteTarget(s)} className="p-1.5 text-text2 hover:text-red-500 transition">
+        <Trash2 size={15} />
+      </button>
+    </>
+  )
+}
 
   return (
     <div className="space-y-4">
