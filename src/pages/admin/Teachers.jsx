@@ -4,7 +4,7 @@ import { useTeachers } from '../../hooks/useData'
 import { usePagination } from '../../hooks/usePagination'
 import {
   Card, Button, Input, Modal, ConfirmDialog,
-  SearchInput, Pagination, TableSkeleton, EmptyState
+  SearchInput, Pagination, TableSkeleton, EmptyState, ResponsiveTable
 } from '../../components/ui'
 import { fmtMoney, getInitial } from '../../lib/utils'
 import { supabase } from '../../lib/supabase'
@@ -134,6 +134,52 @@ export default function AdminTeachers() {
     }
   }
 
+  // Jadval ustunlari — bitta joyda, ham desktop, ham mobile shu yerdan foydalanadi
+  const columns = [
+    { key: 'name', label: 'Ism' },
+    { key: 'subject', label: 'Fan' },
+    { key: 'phone', label: 'Telefon' },
+    { key: 'salary', label: 'Maosh' },
+  ]
+
+  function renderCell(t, col) {
+    switch (col.key) {
+      case 'name':
+        return (
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-400 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+              {getInitial(t.profiles?.full_name)}
+            </div>
+            <span className="font-medium">{t.profiles?.full_name}</span>
+          </div>
+        )
+      case 'subject':
+        return t.subject
+      case 'phone':
+        return <span className="text-text2">{t.profiles?.phone || '—'}</span>
+      case 'salary':
+        return <span className="mono text-emerald-500 font-semibold">{fmtMoney(t.salary)}</span>
+      default:
+        return null
+    }
+  }
+
+  function renderActions(t) {
+    return (
+      <>
+        <button onClick={() => setResetTarget(t)} title="Parolni tiklash" className="p-1.5 text-text2 hover:text-amber-500 transition">
+          <KeyRound size={15} />
+        </button>
+        <button onClick={() => openEdit(t)} className="p-1.5 text-text2 hover:text-accent transition">
+          <Pencil size={15} />
+        </button>
+        <button onClick={() => setDeleteTarget(t)} className="p-1.5 text-text2 hover:text-red-500 transition">
+          <Trash2 size={15} />
+        </button>
+      </>
+    )
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -148,50 +194,16 @@ export default function AdminTeachers() {
       <Card>
         {loading ? (
           <TableSkeleton rows={6} cols={5} />
-        ) : paged.length === 0 ? (
-          <EmptyState icon="👨‍🏫" text={total === 0 ? "Hali o'qituvchi yo'q" : "Hech narsa topilmadi"} />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-surface2 text-left text-text2 text-xs uppercase">
-                  <th className="px-4 py-3 font-bold">Ism</th>
-                  <th className="px-4 py-3 font-bold">Fan</th>
-                  <th className="px-4 py-3 font-bold hidden md:table-cell">Telefon</th>
-                  <th className="px-4 py-3 font-bold">Maosh</th>
-                  <th className="px-4 py-3 font-bold text-right">Amallar</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paged.map(t => (
-                  <tr key={t.id} className="border-t border-border hover:bg-surface2 transition">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-400 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-                          {getInitial(t.profiles?.full_name)}
-                        </div>
-                        <span className="font-medium">{t.profiles?.full_name}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">{t.subject}</td>
-                    <td className="px-4 py-3 text-text2 hidden md:table-cell">{t.profiles?.phone || '—'}</td>
-                    <td className="px-4 py-3 mono text-emerald-500 font-semibold">{fmtMoney(t.salary)}</td>
-                    <td className="px-4 py-3 text-right whitespace-nowrap">
-                      <button onClick={() => setResetTarget(t)} title="Parolni tiklash" className="p-1.5 text-text2 hover:text-amber-500 transition">
-                        <KeyRound size={15} />
-                      </button>
-                      <button onClick={() => openEdit(t)} className="p-1.5 text-text2 hover:text-accent transition">
-                        <Pencil size={15} />
-                      </button>
-                      <button onClick={() => setDeleteTarget(t)} className="p-1.5 text-text2 hover:text-red-500 transition">
-                        <Trash2 size={15} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            columns={columns}
+            data={paged}
+            keyField="id"
+            renderCell={renderCell}
+            actions={renderActions}
+            emptyIcon="👨‍🏫"
+            emptyText={total === 0 ? "Hali o'qituvchi yo'q" : "Hech narsa topilmadi"}
+          />
         )}
         <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </Card>

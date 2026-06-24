@@ -4,7 +4,7 @@ import { useStudents, useGroups } from '../../hooks/useData'
 import { usePagination } from '../../hooks/usePagination'
 import {
   Card, Button, Input, Select, Modal, ConfirmDialog,
-  Badge, SearchInput, Pagination, TableSkeleton, EmptyState
+  Badge, SearchInput, Pagination, TableSkeleton, EmptyState, ResponsiveTable
 } from '../../components/ui'
 import { fmtMoney, fmtDate, getInitial, PAYMENT_LABELS } from '../../lib/utils'
 import { supabase } from '../../lib/supabase'
@@ -171,6 +171,64 @@ export default function AdminStudents() {
     }
   }
 
+  // Jadval ustunlari — bitta joyda, ham desktop, ham mobile shu yerdan foydalanadi
+  const columns = [
+    { key: 'name', label: 'Ism' },
+    { key: 'class', label: 'Sinf' },
+    { key: 'phone', label: 'Telefon' },
+    { key: 'group', label: 'Guruh' },
+    { key: 'payment', label: "To'lov" },
+  ]
+
+  function renderCell(s, col) {
+    switch (col.key) {
+      case 'name':
+        return (
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+              {getInitial(s.profiles?.full_name)}
+            </div>
+            <span className="font-medium">{s.profiles?.full_name}</span>
+          </div>
+        )
+      case 'class':
+        return s.class_name || '—'
+      case 'phone':
+        return <span className="text-text2">{s.profiles?.phone || '—'}</span>
+      case 'group':
+        return (
+          <div>
+            <div>{s.groups?.name || '—'}</div>
+            {s.groups?.room && <div className="text-xs text-text2">Xona: {s.groups.room}</div>}
+          </div>
+        )
+      case 'payment':
+        return (
+          <Badge color={PAYMENT_LABELS[s.payment_status]?.color}>
+            {PAYMENT_LABELS[s.payment_status]?.icon} {PAYMENT_LABELS[s.payment_status]?.text}
+          </Badge>
+        )
+      default:
+        return null
+    }
+  }
+
+  function renderActions(s) {
+    return (
+      <>
+        <button onClick={() => setResetTarget(s)} title="Parolni tiklash" className="p-1.5 text-text2 hover:text-amber-500 transition">
+          <KeyRound size={15} />
+        </button>
+        <button onClick={() => openEdit(s)} className="p-1.5 text-text2 hover:text-accent transition">
+          <Pencil size={15} />
+        </button>
+        <button onClick={() => setDeleteTarget(s)} className="p-1.5 text-text2 hover:text-red-500 transition">
+          <Trash2 size={15} />
+        </button>
+      </>
+    )
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -197,59 +255,16 @@ export default function AdminStudents() {
       <Card>
         {loading ? (
           <TableSkeleton rows={6} cols={5} />
-        ) : paged.length === 0 ? (
-          <EmptyState icon="🎓" text={total === 0 ? "Hali o'quvchi yo'q" : "Hech narsa topilmadi"} />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-surface2 text-left text-text2 text-xs uppercase">
-                  <th className="px-4 py-3 font-bold">Ism</th>
-                  <th className="px-4 py-3 font-bold">Sinf</th>
-                  <th className="px-4 py-3 font-bold hidden md:table-cell">Telefon</th>
-                  <th className="px-4 py-3 font-bold">Guruh</th>
-                  <th className="px-4 py-3 font-bold">To'lov</th>
-                  <th className="px-4 py-3 font-bold text-right">Amallar</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paged.map(s => (
-                  <tr key={s.id} className="border-t border-border hover:bg-surface2 transition">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-                          {getInitial(s.profiles?.full_name)}
-                        </div>
-                        <span className="font-medium">{s.profiles?.full_name}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">{s.class_name || '—'}</td>
-                    <td className="px-4 py-3 text-text2 hidden md:table-cell">{s.profiles?.phone || '—'}</td>
-                    <td className="px-4 py-3">
-                      <div>{s.groups?.name || '—'}</div>
-                      {s.groups?.room && <div className="text-xs text-text2">Xona: {s.groups.room}</div>}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge color={PAYMENT_LABELS[s.payment_status]?.color}>
-                        {PAYMENT_LABELS[s.payment_status]?.icon} {PAYMENT_LABELS[s.payment_status]?.text}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-right whitespace-nowrap">
-                      <button onClick={() => setResetTarget(s)} title="Parolni tiklash" className="p-1.5 text-text2 hover:text-amber-500 transition">
-                        <KeyRound size={15} />
-                      </button>
-                      <button onClick={() => openEdit(s)} className="p-1.5 text-text2 hover:text-accent transition">
-                        <Pencil size={15} />
-                      </button>
-                      <button onClick={() => setDeleteTarget(s)} className="p-1.5 text-text2 hover:text-red-500 transition">
-                        <Trash2 size={15} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            columns={columns}
+            data={paged}
+            keyField="id"
+            renderCell={renderCell}
+            actions={renderActions}
+            emptyIcon="🎓"
+            emptyText={total === 0 ? "Hali o'quvchi yo'q" : "Hech narsa topilmadi"}
+          />
         )}
         <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </Card>
